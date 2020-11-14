@@ -3,17 +3,20 @@
 if [[ ! -z "$REQUIRED_VERSION" ]]; then
     
     echo -e ">>> Kubernetes & CRI-O version is $REQUIRED_VERSION\n"
+    
 
     # Update all packets
     dnf -y update
 
     # Setup nftables
-    firewall-cmd --set-default-zone trusted
-    firewall-cmd --reload
+    #firewall-cmd --set-default-zone trusted
+    #firewall-cmd --reload
+    systemctl disable --now firewalld
+    service firewalld stop
 
     # Setup SELinux
     setenforce 0
-    sed -i 's/^SELINUX=enforcing$/SELINUX=permissive/' /etc/selinux/config
+    sed -i 's/^SELINUX=enforcing$/SELINUX=disabled/' /etc/selinux/config
 
     # Setup prerequesites
     modprobe overlay
@@ -27,7 +30,7 @@ net.bridge.bridge-nf-call-iptables = 1
 net.ipv4.ip_forward = 1
 net.bridge.bridge-nf-call-ip6tables = 1
 EOF
-    sysctl --system
+    sysctl --system now
 
     # Setup CRI-O repos
     dnf -y install 'dnf-command(copr)'
@@ -72,7 +75,9 @@ EOF
     echo -e "\n>>> Now you can initiate K8s with \`kubeadm init\` command"
 
 else
-
+    echo ">>> Export the variable, example : export REQUIRED_VERSION=1.19"
     echo ">>> Please setup Kubernetes & CRI-O version as \$REQUIRED_VERSION"
-
+    echo ">>> This is server reboot now..."
+    sleep 10
+    shutdown -r now
 fi
